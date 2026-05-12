@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Application\UseCase\Task;
+
+use Application\DTO\Task\ListTasksInput;
+use Domain\Task\Contracts\TaskRepositoryInterface;
+use Domain\Task\DTO\TaskPage;
+
+final readonly class ListTasksUseCase
+{
+    public function __construct(
+        private TaskRepositoryInterface $tasks,
+    ) {
+    }
+
+    public function execute(ListTasksInput $input): TaskPage
+    {
+        return $this->tasks->findPage($input->status, $input->limit, $input->cursor);
+    }
+}

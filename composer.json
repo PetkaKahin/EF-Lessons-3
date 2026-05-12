@@ -1,0 +1,16 @@
+{
+    "name": "ef/lesson-3",
+    "description": "EF lesson 3 project",
+    "license": "proprietary",
+    "type": "project",
+    "require": {
+        "php": "^8.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Application\\": "Application/",
+            "Domain\\": "Domain/",
+            "Infrastructure\\": "Infrastructure/"
+        }
+    }
+}
