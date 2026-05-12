@@ -9,6 +9,7 @@ use Application\UseCase\Task\DeleteTaskUseCase;
 use Application\UseCase\Task\GetTaskUseCase;
 use Application\UseCase\Task\ListTasksUseCase;
 use Application\UseCase\Task\UpdateTaskUseCase;
+use DomainException;
 use Infrastructure\Http\Presenter\TaskPresenter;
 use Infrastructure\Http\RequestMapper\Task\CreateTaskRequestMapper;
 use Infrastructure\Http\RequestMapper\Task\ListTasksRequestMapper;
@@ -20,6 +21,7 @@ use Infrastructure\Http\Response\Response;
 use Infrastructure\Kernel\Request;
 use InvalidArgumentException;
 use JsonException;
+use Throwable;
 
 final readonly class TaskController
 {
@@ -71,13 +73,17 @@ final readonly class TaskController
 
     public function get(Request $request): Response
     {
-        $task = $this->getTask->execute($this->taskIdPathMapper->map($request));
+        try {
+            $task = $this->getTask->execute($this->taskIdPathMapper->map($request));
 
-        if ($task === null) {
-            return new JsonResponse(['error' => 'Task not found'], 404);
+            if ($task === null) {
+                return new JsonResponse(['error' => 'Task not found'], 404);
+            }
+
+            return new JsonResponse($this->taskPresenter->present($task));
+        } catch (Throwable $exception) {
+            return new JsonResponse(['error' => $exception->getMessage()], 422);
         }
-
-        return new JsonResponse($this->taskPresenter->present($task));
     }
 
     public function patch(Request $request): Response

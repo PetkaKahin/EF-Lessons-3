@@ -15,6 +15,10 @@ final readonly class TaskId
 
     public static function fromData(int|string $value): self
     {
+        if (!ctype_digit($value)) {
+            throw new InvalidArgumentException('Task id must be an numeric value.');
+        }
+
         $value = (int) $value;
 
         if ($value < 1) {
