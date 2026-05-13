@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Infrastructure\Http\Controller;
 
+use Application\DTO\Task\CreateTaskInput;
+use Application\Idempotency\IdempotentResponse;
+use Application\UseCase\Idempotency\IdempotencyConflictException;
+use Application\UseCase\Idempotency\RunIdempotentOperationUseCase;
 use Application\UseCase\Task\CreateTaskUseCase;
 use Application\UseCase\Task\DeleteTaskUseCase;
 use Application\UseCase\Task\GetTaskUseCase;
 use Application\UseCase\Task\ListTasksUseCase;
 use Application\UseCase\Task\UpdateTaskUseCase;
-use DomainException;
 use Infrastructure\Http\Presenter\TaskPresenter;
+use Infrastructure\Http\RequestMapper\Task\CreateTaskRequestHasher;
 use Infrastructure\Http\RequestMapper\Task\CreateTaskRequestMapper;
 use Infrastructure\Http\RequestMapper\Task\ListTasksRequestMapper;
 use Infrastructure\Http\RequestMapper\Task\TaskIdPathMapper;
@@ -27,11 +31,13 @@ final readonly class TaskController
 {
     public function __construct(
         private CreateTaskUseCase $createTask,
+        private RunIdempotentOperationUseCase $runIdempotentOperation,
         private ListTasksUseCase $listTasks,
         private GetTaskUseCase $getTask,
         private UpdateTaskUseCase $updateTask,
         private DeleteTaskUseCase $deleteTask,
         private CreateTaskRequestMapper $createTaskRequestMapper,
+        private CreateTaskRequestHasher $createTaskRequestHasher,
         private ListTasksRequestMapper $listTasksRequestMapper,
         private UpdateTaskRequestMapper $updateTaskRequestMapper,
         private TaskIdPathMapper $taskIdPathMapper,
@@ -42,17 +48,27 @@ final readonly class TaskController
     public function create(Request $request): Response
     {
         try {
-            $task = $this->createTask->execute(
-                $this->createTaskRequestMapper->map($request),
+            $input = $this->createTaskRequestMapper->map($request);
+
+            $idempotencyKey = $this->idempotencyKey($request);
+
+            if ($idempotencyKey === null) {
+                return $this->jsonResponseFromIdempotentResponse(
+                    $this->createTaskResponse($input),
+                );
+            }
+
+            $response = $this->runIdempotentOperation->execute(
+                key: $idempotencyKey,
+                requestHash: $this->createTaskRequestHasher->hash($request, $input),
+                operation: fn(): IdempotentResponse => $this->createTaskResponse($input),
             );
 
-            return new JsonResponse(
-                data: $this->taskPresenter->present($task),
-                statusCode: 201,
-                headers: ['Location' => '/tasks/' . $task->id->value],
-            );
+            return $this->jsonResponseFromIdempotentResponse($response);
         } catch (JsonException) {
             return new JsonResponse(['error' => 'Invalid JSON'], 400);
+        } catch (IdempotencyConflictException $exception) {
+            return new JsonResponse(['error' => $exception->getMessage()], 409);
         } catch (InvalidArgumentException $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], 422);
         }
@@ -115,5 +131,37 @@ final readonly class TaskController
         }
 
         return new NoContentResponse();
+    }
+
+    private function idempotencyKey(Request $request): ?string
+    {
+        $key = $request->header('Idempotency-Key');
+
+        if ($key === null) {
+            return null;
+        }
+
+        $key = trim($key);
+
+        return $key === '' ? null : $key;
+    }
+
+    private function createTaskResponse(CreateTaskInput $input): IdempotentResponse
+    {
+        $task = $this->createTask->execute($input);
+
+        return new IdempotentResponse(
+            data: $this->taskPresenter->present($task),
+        );
+    }
+
+    private function jsonResponseFromIdempotentResponse(IdempotentResponse $response): JsonResponse
+    {
+        // Для POST /tasks статус всегда 201, поэтому не храним его в таблице.
+        return new JsonResponse(
+            data: $response->data,
+            statusCode: 201,
+            headers: ['Location' => '/tasks/' . $response->data['id']],
+        );
     }
 }

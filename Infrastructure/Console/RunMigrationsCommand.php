@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Application\UseCase\Migration;
+namespace Infrastructure\Console;
 
 use Infrastructure\Database\MigrationRunner;
 use Infrastructure\Database\PdoConnection;
 use Throwable;
 
-final readonly class RunMigrationsUseCase
+final readonly class RunMigrationsCommand
 {
     public function __construct(
         private MigrationRunner $migrationRunner,
@@ -26,3 +26,4 @@ final readonly class RunMigrationsUseCase
         return $this->migrationRunner->run($this->pdoConnection->get());
     }
 }
+

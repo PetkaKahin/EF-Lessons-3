@@ -6,18 +6,16 @@ namespace Domain\Task;
 
 use InvalidArgumentException;
 
-final readonly class Task
+final class Task
 {
     public function __construct(
-        private(set) public TaskId $id,
-        private(set) public string $title,
-        private(set) public ?string $description,
-        private(set) public TaskStatus $status,
-        private(set) public string $createdAt,
+        public readonly TaskId $id,
+        public private(set) string $title,
+        public private(set) ?string $description,
+        public private(set) TaskStatus $status,
+        public readonly string $createdAt,
     ) {
-        if (trim($title) === '') {
-            throw new InvalidArgumentException('Task title is required.');
-        }
+        self::assertTitle($title);
     }
 
     public static function create(
@@ -36,4 +34,27 @@ final readonly class Task
         );
     }
 
+    public function rename(string $title): void
+    {
+        self::assertTitle($title);
+
+        $this->title = $title;
+    }
+
+    public function changeDescription(?string $description): void
+    {
+        $this->description = $description;
+    }
+
+    public function changeStatus(TaskStatus $status): void
+    {
+        $this->status = $status;
+    }
+
+    private static function assertTitle(string $title): void
+    {
+        if (trim($title) === '') {
+            throw new InvalidArgumentException('Task title is required.');
+        }
+    }
 }

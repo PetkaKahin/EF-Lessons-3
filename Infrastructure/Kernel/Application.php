@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace Infrastructure\Kernel;
 
-use Infrastructure\Database\PdoConnection;
-use Infrastructure\Persistence\Task\SQLiteTaskRepository;
-use Infrastructure\Persistence\Task\TaskMapper;
+use Infrastructure\DependencyInjection\AppContainerFactory;
 
 final class Application
 {
     public function run(): void
     {
-        $pdoConnection = new PdoConnection();
-        $taskRepository = new SQLiteTaskRepository($pdoConnection, new TaskMapper());
-
-        $router = new Router();
+        $container = AppContainerFactory::create();
+        /** @var Router $router */
+        $router = $container->get(Router::class);
         $registerRoutes = require_once __DIR__ . '/../Http/Routes/routes.php';
-        $registerRoutes($router, $taskRepository);
+
+        $registerRoutes($router, $container);
 
         $request = Request::fromGlobals();
         $response = $router->dispatch($request);

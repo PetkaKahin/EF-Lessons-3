@@ -26,16 +26,20 @@ final readonly class UpdateTaskUseCase
             return null;
         }
 
-        $updatedTask = new Task(
-            id: $task->id,
-            title: $input->hasTitle() ? $input->title : $task->title,
-            description: $input->hasDescription() ? $input->description : $task->description,
-            status: $input->hasStatus() ? $input->status : $task->status,
-            createdAt: $task->createdAt,
-        );
+        if ($input->hasTitle()) {
+            $task->rename($input->title);
+        }
 
-        $this->tasks->save($updatedTask);
+        if ($input->hasDescription()) {
+            $task->changeDescription($input->description);
+        }
 
-        return $updatedTask;
+        if ($input->hasStatus()) {
+            $task->changeStatus($input->status);
+        }
+
+        $this->tasks->save($task);
+
+        return $task;
     }
 }
