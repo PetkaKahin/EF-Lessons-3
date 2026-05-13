@@ -4,11 +4,24 @@ declare(strict_types=1);
 
 namespace Infrastructure\Kernel;
 
-use Infrastructure\DependencyInjection\AppContainerFactory;
+use Infrastructure\DI\AppContainerFactory;
+use Infrastructure\Http\Response\Response;
+use Throwable;
 
 final class Application
 {
     public function run(): void
+    {
+        try {
+            $response = $this->handle();
+        } catch (Throwable $exception) {
+            $response = (new ExceptionHandler())->handle($exception);
+        }
+
+        $response->send();
+    }
+
+    private function handle(): Response
     {
         $container = AppContainerFactory::create();
         /** @var Router $router */
@@ -18,8 +31,7 @@ final class Application
         $registerRoutes($router, $container);
 
         $request = Request::fromGlobals();
-        $response = $router->dispatch($request);
 
-        $response->send();
+        return $router->dispatch($request);
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Application\UseCase\Task;
 
+use Application\Contracts\TaskRepositoryInterface;
 use Application\DTO\Task\CreateTaskInput;
-use Domain\Task\Contracts\TaskRepositoryInterface;
 use Domain\Task\Task;
 
 final readonly class CreateTaskUseCase

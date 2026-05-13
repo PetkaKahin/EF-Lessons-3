@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Application\UseCase\Task;
 
-use Domain\Task\Contracts\TaskRepositoryInterface;
+use Application\Contracts\TaskRepositoryInterface;
 use Domain\Task\TaskId;
 
 final readonly class DeleteTaskUseCase

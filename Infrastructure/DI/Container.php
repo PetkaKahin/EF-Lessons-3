@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Infrastructure\DependencyInjection;
+namespace Infrastructure\DI;
 
 use Closure;
 use RuntimeException;

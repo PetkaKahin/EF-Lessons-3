@@ -6,7 +6,7 @@ use Infrastructure\Http\Controller\EchoController;
 use Infrastructure\Http\Controller\HeadersController;
 use Infrastructure\Http\Controller\HealthController;
 use Infrastructure\Http\Controller\TaskController;
-use Infrastructure\DependencyInjection\Container;
+use Infrastructure\DI\Container;
 use Infrastructure\Kernel\Router;
 
 return static function (

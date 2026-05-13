@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Domain\Task\Contracts;
+namespace Application\Contracts;
 
 use Domain\Task\DTO\TaskPage;
 use Domain\Task\Task;

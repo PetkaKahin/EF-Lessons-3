@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Application\UseCase\Task;
 
+use Application\Contracts\TaskRepositoryInterface;
 use Application\DTO\Task\UpdateTaskInput;
-use Domain\Task\Contracts\TaskRepositoryInterface;
 use Domain\Task\Task;
 use Domain\Task\TaskId;
 

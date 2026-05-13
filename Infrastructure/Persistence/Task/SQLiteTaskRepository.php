@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Infrastructure\Persistence\Task;
 
-use Domain\Task\Contracts\TaskRepositoryInterface;
+use Application\Contracts\TaskRepositoryInterface;
 use Domain\Task\DTO\TaskPage;
 use Domain\Task\Task;
 use Domain\Task\TaskId;

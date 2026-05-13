@@ -46,7 +46,7 @@ final readonly class RunIdempotentOperationUseCase
 
             // На случай когда ключ есть, но первый запрос еще не успел сохранить ответ
             if (!$record->isCompleted()) {
-                throw new RuntimeException('Idempotent operation is still processing.');
+                throw IdempotencyInProgressException::forUnfinishedOperation();
             }
 
             // Повтор такого же запроса получает ровно тот ответ, который сохранил первый запрос

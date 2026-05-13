@@ -2,20 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Infrastructure\DependencyInjection;
+namespace Infrastructure\DI;
 
 use Application\Contracts\IdempotencyKeyRepositoryInterface;
+use Application\Contracts\TaskRepositoryInterface;
 use Application\Contracts\TransactionManagerInterface;
 use Application\UseCase\EchoJsonUseCase;
 use Application\UseCase\GetHealthStatusUseCase;
 use Application\UseCase\GetImportantHeadersUseCase;
 use Application\UseCase\Idempotency\RunIdempotentOperationUseCase;
+use Application\UseCase\Task\CreateTaskIdempotentlyUseCase;
 use Application\UseCase\Task\CreateTaskUseCase;
 use Application\UseCase\Task\DeleteTaskUseCase;
 use Application\UseCase\Task\GetTaskUseCase;
 use Application\UseCase\Task\ListTasksUseCase;
 use Application\UseCase\Task\UpdateTaskUseCase;
-use Domain\Task\Contracts\TaskRepositoryInterface;
 use Infrastructure\Database\PdoConnection;
 use Infrastructure\Database\PdoTransactionManager;
 use Infrastructure\Http\Controller\EchoController;
@@ -140,6 +141,14 @@ final class AppContainerFactory
             ),
         );
 
+        $container->singleton(
+            CreateTaskIdempotentlyUseCase::class,
+            static fn(Container $container): CreateTaskIdempotentlyUseCase => new CreateTaskIdempotentlyUseCase(
+                $container->get(CreateTaskUseCase::class),
+                $container->get(RunIdempotentOperationUseCase::class),
+            ),
+        );
+
         $container->singleton(GetHealthStatusUseCase::class, static fn(Container $container): GetHealthStatusUseCase => new GetHealthStatusUseCase());
         $container->singleton(EchoJsonUseCase::class, static fn(Container $container): EchoJsonUseCase => new EchoJsonUseCase());
         $container->singleton(GetImportantHeadersUseCase::class, static fn(Container $container): GetImportantHeadersUseCase => new GetImportantHeadersUseCase());
@@ -168,8 +177,7 @@ final class AppContainerFactory
         $container->singleton(
             TaskController::class,
             static fn(Container $container): TaskController => new TaskController(
-                createTask: $container->get(CreateTaskUseCase::class),
-                runIdempotentOperation: $container->get(RunIdempotentOperationUseCase::class),
+                createTask: $container->get(CreateTaskIdempotentlyUseCase::class),
                 listTasks: $container->get(ListTasksUseCase::class),
                 getTask: $container->get(GetTaskUseCase::class),
                 updateTask: $container->get(UpdateTaskUseCase::class),
