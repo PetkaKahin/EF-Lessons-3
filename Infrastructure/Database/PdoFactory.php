@@ -8,15 +8,15 @@ use PDO;
 
 final class PdoFactory
 {
-    public static function create(): PDO
+    public static function create(string $databasePath): PDO
     {
-        $databaseDirectory = dirname(__DIR__, 2) . '/var';
+        $databaseDirectory = dirname($databasePath);
 
         if (!is_dir($databaseDirectory)) {
             mkdir($databaseDirectory, 0777, true);
         }
 
-        $pdo = new PDO('sqlite:' . $databaseDirectory . '/app.sqlite');
+        $pdo = new PDO('sqlite:' . $databasePath);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 

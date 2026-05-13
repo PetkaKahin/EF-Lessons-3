@@ -4,7 +4,7 @@
 
 1. [Жизненный цикл запроса](01 Жизненный цикл запроса.md) - путь HTTP-запроса от `public/index.php` до JSON-ответа
 2. [Слои и зависимости](02 Слои и зависимости.md) - как разделены `Domain`, `Application` и `Infrastructure`
-3. [Решения и паттерны](03 Решения и паттерны.md) - use case, repository, DTO, mapper, presenter, DI, idempotency, transactions
+3. [Решения и паттерны](03 Решения и паттерны.md) - use case, repository, DTO, mapper, presenter, DI, middleware, idempotency, transactions
 
 ## Короткая модель
 
@@ -14,6 +14,7 @@ HTTP request
 -> Infrastructure\Kernel\Application
 -> Infrastructure\Kernel\Request
 -> Infrastructure\Kernel\Router
+-> Middleware, если route защищен
 -> Controller
 -> RequestMapper
 -> Application DTO
@@ -40,7 +41,7 @@ Infrastructure читает и пишет данные через SQLite.
 
 `Application/` - сценарии приложения, DTO, контракты и idempotency-модель. Здесь лежит `TaskRepositoryInterface`, потому что use case'ам нужен контракт хранения, а не конкретная SQLite-реализация
 
-`Infrastructure/` - технический слой: HTTP kernel, router, controllers, request mappers, presenters, DI container, SQLite repositories, PDO, migrations
+`Infrastructure/` - технический слой: config, HTTP kernel, router, middleware, controllers, request mappers, presenters, DI container, SQLite repositories, PDO, migrations
 
 `public/` - входная точка веб-приложения
 

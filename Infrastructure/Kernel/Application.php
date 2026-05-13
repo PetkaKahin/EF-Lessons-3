@@ -15,7 +15,7 @@ final class Application
         try {
             $response = $this->handle();
         } catch (Throwable $exception) {
-            $response = (new ExceptionHandler())->handle($exception);
+            $response = new ExceptionHandler()->handle($exception);
         }
 
         $response->send();

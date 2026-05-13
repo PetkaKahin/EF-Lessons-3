@@ -17,12 +17,16 @@ use Application\UseCase\Task\DeleteTaskUseCase;
 use Application\UseCase\Task\GetTaskUseCase;
 use Application\UseCase\Task\ListTasksUseCase;
 use Application\UseCase\Task\UpdateTaskUseCase;
+use Infrastructure\Config\Config;
+use Infrastructure\Console\RunMigrationsCommand;
+use Infrastructure\Database\MigrationRunner;
 use Infrastructure\Database\PdoConnection;
 use Infrastructure\Database\PdoTransactionManager;
 use Infrastructure\Http\Controller\EchoController;
 use Infrastructure\Http\Controller\HeadersController;
 use Infrastructure\Http\Controller\HealthController;
 use Infrastructure\Http\Controller\TaskController;
+use Infrastructure\Http\Middleware\BearerTokenMiddleware;
 use Infrastructure\Http\Presenter\TaskPresenter;
 use Infrastructure\Http\RequestMapper\JsonObjectBodyParser;
 use Infrastructure\Http\RequestMapper\Task\CreateTaskRequestHasher;
@@ -42,9 +46,31 @@ final class AppContainerFactory
     {
         $container = new Container();
 
+        $container->singleton(
+            Config::class,
+            static fn(Container $container): Config => new Config(dirname(__DIR__, 2) . '/config.php'),
+        );
         $container->singleton(Router::class, static fn(Container $container): Router => new Router());
 
-        $container->singleton(PdoConnection::class, static fn(Container $container): PdoConnection => new PdoConnection());
+        $container->singleton(
+            PdoConnection::class,
+            static fn(Container $container): PdoConnection => new PdoConnection(
+                $container->get(Config::class),
+            ),
+        );
+        $container->singleton(
+            MigrationRunner::class,
+            static fn(Container $container): MigrationRunner => new MigrationRunner(
+                $container->get(Config::class)->get('MIGRATIONS_PATH'),
+            ),
+        );
+        $container->singleton(
+            RunMigrationsCommand::class,
+            static fn(Container $container): RunMigrationsCommand => new RunMigrationsCommand(
+                $container->get(MigrationRunner::class),
+                $container->get(PdoConnection::class),
+            ),
+        );
         $container->singleton(TaskMapper::class, static fn(Container $container): TaskMapper => new TaskMapper());
 
         $container->singleton(
@@ -74,6 +100,12 @@ final class AppContainerFactory
         $container->singleton(CreateTaskRequestHasher::class, static fn(Container $container): CreateTaskRequestHasher => new CreateTaskRequestHasher());
         $container->singleton(TaskIdPathMapper::class, static fn(Container $container): TaskIdPathMapper => new TaskIdPathMapper());
         $container->singleton(TaskPresenter::class, static fn(Container $container): TaskPresenter => new TaskPresenter());
+        $container->singleton(
+            BearerTokenMiddleware::class,
+            static fn(Container $container): BearerTokenMiddleware => new BearerTokenMiddleware(
+                $container->get(Config::class),
+            ),
+        );
 
         $container->singleton(
             CreateTaskRequestMapper::class,

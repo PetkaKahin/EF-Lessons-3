@@ -1,6 +1,6 @@
-.PHONY: init up down migrate shell
+.PHONY: init up down migrate shell check-config
 
-init:
+init: check-config
 	docker compose build
 	docker compose run --rm php composer install
 	$(MAKE) migrate
@@ -11,8 +11,11 @@ up:
 down:
 	docker compose down
 
-migrate:
-	docker compose run --rm php php -r "require 'vendor/autoload.php'; $$runMigrations = new \Infrastructure\Console\RunMigrationsCommand(new \Infrastructure\Database\MigrationRunner(getcwd() . '/Infrastructure/Database/migrations'), new \Infrastructure\Database\PdoConnection()); $$appliedMigrations = $$runMigrations->execute(); echo $$appliedMigrations === [] ? \"No new migrations.\n\" : sprintf(\"Applied %d migration(s): %s\n\", count($$appliedMigrations), implode(', ', $$appliedMigrations));"
+migrate: check-config
+	docker compose run --rm php php -r "require 'vendor/autoload.php'; $$container = \Infrastructure\DI\AppContainerFactory::create(); $$runMigrations = $$container->get(\Infrastructure\Console\RunMigrationsCommand::class); $$appliedMigrations = $$runMigrations->execute(); echo $$appliedMigrations === [] ? \"No new migrations.\n\" : sprintf(\"Applied %d migration(s): %s\n\", count($$appliedMigrations), implode(', ', $$appliedMigrations));"
 
 shell:
 	docker compose exec php sh
+
+check-config:
+	@if not exist config.php ( echo config.php не найден. & echo Создай config.php из config.example.php и заполни значения. & exit /b 1 )
