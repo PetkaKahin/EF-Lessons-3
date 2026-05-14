@@ -23,6 +23,7 @@ final class Application
             $response = new ExceptionHandler()->handle($exception);
         }
 
+        // делаю тут на случай, если приложение выкинет ошибку, а заголовки отдать всё равно надо
         if ($router !== null) {
             $response = $router->processResponse($request, $response);
         }
