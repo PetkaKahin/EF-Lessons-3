@@ -5,33 +5,39 @@ declare(strict_types=1);
 namespace Infrastructure\Kernel;
 
 use Infrastructure\DI\AppContainerFactory;
-use Infrastructure\Http\Response\Response;
+use Infrastructure\DI\Container;
 use Throwable;
 
 final class Application
 {
     public function run(): void
     {
+        $request = Request::fromGlobals();
+        $router = null;
+
         try {
-            $response = $this->handle();
+            $container = AppContainerFactory::create();
+            $router = $this->router($container);
+            $response = $router->dispatch($request);
         } catch (Throwable $exception) {
             $response = new ExceptionHandler()->handle($exception);
+        }
+
+        if ($router !== null) {
+            $response = $router->processResponse($request, $response);
         }
 
         $response->send();
     }
 
-    private function handle(): Response
+    private function router(Container $container): Router
     {
-        $container = AppContainerFactory::create();
         /** @var Router $router */
         $router = $container->get(Router::class);
         $registerRoutes = require_once __DIR__ . '/../Http/Routes/routes.php';
 
         $registerRoutes($router, $container);
 
-        $request = Request::fromGlobals();
-
-        return $router->dispatch($request);
+        return $router;
     }
 }

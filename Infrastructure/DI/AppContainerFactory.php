@@ -27,6 +27,8 @@ use Infrastructure\Http\Controller\HeadersController;
 use Infrastructure\Http\Controller\HealthController;
 use Infrastructure\Http\Controller\TaskController;
 use Infrastructure\Http\Middleware\BearerTokenMiddleware;
+use Infrastructure\Http\Middleware\CorsMiddleware;
+use Infrastructure\Http\Middleware\DebugHeadersMiddleware;
 use Infrastructure\Http\Presenter\TaskPresenter;
 use Infrastructure\Http\RequestMapper\JsonObjectBodyParser;
 use Infrastructure\Http\RequestMapper\Task\CreateTaskRequestHasher;
@@ -100,6 +102,18 @@ final class AppContainerFactory
         $container->singleton(CreateTaskRequestHasher::class, static fn(Container $container): CreateTaskRequestHasher => new CreateTaskRequestHasher());
         $container->singleton(TaskIdPathMapper::class, static fn(Container $container): TaskIdPathMapper => new TaskIdPathMapper());
         $container->singleton(TaskPresenter::class, static fn(Container $container): TaskPresenter => new TaskPresenter());
+        $container->singleton(
+            DebugHeadersMiddleware::class,
+            static fn(Container $container): DebugHeadersMiddleware => new DebugHeadersMiddleware(
+                $container->get(Config::class),
+            ),
+        );
+        $container->singleton(
+            CorsMiddleware::class,
+            static fn(Container $container): CorsMiddleware => new CorsMiddleware(
+                $container->get(Config::class),
+            ),
+        );
         $container->singleton(
             BearerTokenMiddleware::class,
             static fn(Container $container): BearerTokenMiddleware => new BearerTokenMiddleware(

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Infrastructure\Kernel\Enums;
 
 enum HttpMethods: string
@@ -10,4 +12,5 @@ enum HttpMethods: string
     case PUT = 'PUT';
     case PATCH = 'PATCH';
     case DELETE = 'DELETE';
+    case OPTIONS = 'OPTIONS';
 }

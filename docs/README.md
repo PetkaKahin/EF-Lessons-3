@@ -14,7 +14,7 @@ HTTP request
 -> Infrastructure\Kernel\Application
 -> Infrastructure\Kernel\Request
 -> Infrastructure\Kernel\Router
--> Middleware, если route защищен
+-> Request middleware, если подходит route или path prefix
 -> Controller
 -> RequestMapper
 -> Application DTO
@@ -24,6 +24,7 @@ HTTP request
 -> Domain object
 -> Presenter
 -> Response
+-> Response middleware, если подходит path prefix
 -> JSON
 ```
 

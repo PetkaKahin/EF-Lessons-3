@@ -7,6 +7,8 @@ use Infrastructure\Http\Controller\HeadersController;
 use Infrastructure\Http\Controller\HealthController;
 use Infrastructure\Http\Controller\TaskController;
 use Infrastructure\Http\Middleware\BearerTokenMiddleware;
+use Infrastructure\Http\Middleware\CorsMiddleware;
+use Infrastructure\Http\Middleware\DebugHeadersMiddleware;
 use Infrastructure\DI\Container;
 use Infrastructure\Kernel\Router;
 
@@ -14,6 +16,9 @@ return static function (
     Router $router,
     Container $container,
 ): void {
+    $router->middleware($container->get(DebugHeadersMiddleware::class));
+    $router->middleware($container->get(CorsMiddleware::class), '/tasks');
+
     $taskController = $container->get(TaskController::class);
     $auth = $container->get(BearerTokenMiddleware::class);
 
@@ -21,9 +26,9 @@ return static function (
     $router->post('/echo', $container->get(EchoController::class));
     $router->get('/headers', $container->get(HeadersController::class));
 
-    $router->post('/tasks', $auth->protect([$taskController, 'create']));
+    $router->post('/tasks', [$taskController, 'create'], $auth);
     $router->get('/tasks', [$taskController, 'list']);
     $router->get('/tasks/{id}', [$taskController, 'get']);
-    $router->patch('/tasks/{id}', $auth->protect([$taskController, 'patch']));
-    $router->delete('/tasks/{id}', $auth->protect([$taskController, 'delete']));
+    $router->patch('/tasks/{id}', [$taskController, 'patch'], $auth);
+    $router->delete('/tasks/{id}', [$taskController, 'delete'], $auth);
 };

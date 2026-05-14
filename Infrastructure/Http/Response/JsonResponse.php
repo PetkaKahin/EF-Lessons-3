@@ -25,28 +25,6 @@ final class JsonResponse extends Response
             header($name . ': ' . $value);
         }
 
-        echo json_encode($this->dataWithProfilerTime(), JSON_UNESCAPED_SLASHES);
-    }
-
-    private function dataWithProfilerTime(): array
-    {
-        if ($this->data === null) {
-            return [
-                'app_time' => $this->profilerTime(),
-            ];
-        }
-
-        return [
-            'data' => $this->data,
-            'app_time' => $this->profilerTime(),
-        ];
-    }
-
-    private function profilerTime(): string
-    {
-        return round(
-            (microtime(true) - $GLOBALS['startTime']) * 1000,
-            1,
-        ) . 'ms';
+        echo json_encode(['data' => $this->data], JSON_UNESCAPED_SLASHES);
     }
 }

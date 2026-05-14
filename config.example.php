@@ -6,4 +6,6 @@ return [
     'API_TOKEN' => 'change-me',
     'DATABASE_PATH' => __DIR__ . '/var/app.sqlite',
     'MIGRATIONS_PATH' => __DIR__ . '/Infrastructure/Database/migrations',
+    'APP_URL' => 'http://localhost:5173',
+    'DEBUG' => true,
 ];
