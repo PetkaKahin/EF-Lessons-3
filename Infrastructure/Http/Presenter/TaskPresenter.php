@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Infrastructure\Http\Presenter;
 
-use Domain\Task\DTO\TaskPage;
+use Application\DTO\Task\TaskPage;
 use Domain\Task\Task;
 
 final class TaskPresenter
 {
     /**
      * @return array{
-     *     id: int,
+     *     id: string,
      *     title: string,
      *     description: string|null,
      *     status: string,
@@ -31,8 +31,8 @@ final class TaskPresenter
 
     /**
      * @return array{
-     *     items: array<int, array<string, string|int|null>>,
-     *     nextCursor: int|null
+     *     items: array<int, array<string, string|null>>,
+     *     nextCursor: string|null
      * }
      */
     public function presentPage(TaskPage $page): array
@@ -42,7 +42,7 @@ final class TaskPresenter
                 fn(Task $task): array => $this->present($task),
                 $page->items,
             ),
-            'nextCursor' => $page->nextCursor?->value,
+            'nextCursor' => $page->nextCursor,
         ];
     }
 }

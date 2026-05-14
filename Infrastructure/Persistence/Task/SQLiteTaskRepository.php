@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Infrastructure\Persistence\Task;
 
 use Application\Contracts\TaskRepositoryInterface;
-use Domain\Task\DTO\TaskPage;
+use Application\DTO\Task\TaskPage;
+use Application\DTO\Task\UpdateTaskInput;
 use Domain\Task\Task;
 use Domain\Task\TaskId;
 use Domain\Task\TaskStatus;
@@ -24,12 +25,13 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
     public function create(string $title, ?string $description, TaskStatus $status): Task
     {
         $createTaskSql = <<<SQL
-            INSERT INTO tasks (title, description, status, created_at)
-            VALUES (:title, :description, :status, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-            RETURNING id, title, description, status, created_at
+            INSERT INTO tasks (uuid, title, description, status, created_at)
+            VALUES (:uuid, :title, :description, :status, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+            RETURNING uuid AS id, title, description, status, created_at
             SQL;
 
         $createTaskParameters = [
+            'uuid'        => $this->newUuid(),
             'title'       => $title,
             'description' => $description,
             'status'      => $status->value,
@@ -44,9 +46,9 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
     public function findById(TaskId $id): ?Task
     {
         $findTaskByIdSql = <<<SQL
-            SELECT id, title, description, status, created_at
+            SELECT uuid AS id, title, description, status, created_at
             FROM tasks
-            WHERE id = :id
+            WHERE uuid = :id
             SQL;
         $findTaskByIdParameters = [
             'id' => $id->value,
@@ -65,9 +67,9 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
      * Если передан статус - добавляем фильтр по статусу <br>
      * Если передан cursor - то берем следующую страницу <br>
      */
-    public function findPage(?TaskStatus $status, int $limit, ?TaskId $cursor): TaskPage
+    public function findPage(?TaskStatus $status, int $limit, ?string $cursor): TaskPage
     {
-        $listTasksSql = 'SELECT id, title, description, status, created_at FROM tasks';
+        $listTasksSql = 'SELECT id AS cursor_id, uuid AS id, title, description, status, created_at FROM tasks';
         $conditions = [];
 
         if ($status !== null) {
@@ -92,7 +94,7 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
         }
 
         if ($cursor !== null) {
-            $statement->bindValue(':cursor_id', $cursor->value, PDO::PARAM_INT);
+            $statement->bindValue(':cursor_id', (int) $cursor, PDO::PARAM_INT);
         }
 
         $statement->bindValue(':limit', $requestedRowsLimit, PDO::PARAM_INT);
@@ -105,28 +107,41 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
             fn(array $taskRow): Task => $this->mapper->fromArray($taskRow),
             $currentPageRows,
         );
-        $nextCursor = $hasNextPage && $tasks !== [] ? $tasks[array_key_last($tasks)]->id : null;
+        $nextCursor = $hasNextPage && $currentPageRows !== []
+            ? (string) $currentPageRows[array_key_last($currentPageRows)]['cursor_id']
+            : null;
 
         return new TaskPage($tasks, $nextCursor);
     }
 
-    /**
-     * Сохраняет изменения задачи в базе.
-     */
-    public function save(Task $task): void
+    public function update(Task $task, UpdateTaskInput $input): ?Task
     {
-        $updateTaskSql = <<<SQL
-            UPDATE tasks
-            SET title = :title,
-                description = :description,
-                status = :status
-            WHERE id = :id
-            SQL;
+        $sets = [];
+        $parameters = [
+            'id' => $task->id->value,
+        ];
 
-        $updateTaskParameters = $this->mapper->toArray($task);
+        if ($input->hasTitle()) {
+            $sets[] = 'title = :title';
+            $parameters['title'] = $task->title;
+        }
+
+        if ($input->hasDescription()) {
+            $sets[] = 'description = :description';
+            $parameters['description'] = $task->description;
+        }
+
+        if ($input->hasStatus()) {
+            $sets[] = 'status = :status';
+            $parameters['status'] = $task->status->value;
+        }
+
+        $updateTaskSql = 'UPDATE tasks SET ' . implode(', ', $sets) . ' WHERE uuid = :id';
 
         $statement = $this->pdo()->prepare($updateTaskSql);
-        $statement->execute($updateTaskParameters);
+        $statement->execute($parameters);
+
+        return $this->findById($task->id);
     }
 
     /**
@@ -134,7 +149,7 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
      */
     public function delete(TaskId $id): bool
     {
-        $deleteTaskSql = 'DELETE FROM tasks WHERE id = :id';
+        $deleteTaskSql = 'DELETE FROM tasks WHERE uuid = :id';
         $deleteTaskParameters = [
             'id' => $id->value,
         ];
@@ -151,5 +166,19 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
     private function pdo(): PDO
     {
         return $this->pdoConnection->get();
+    }
+
+    private function newUuid(): string
+    {
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        $hex = bin2hex($bytes);
+
+        return substr($hex, 0, 8) . '-'
+            . substr($hex, 8, 4) . '-'
+            . substr($hex, 12, 4) . '-'
+            . substr($hex, 16, 4) . '-'
+            . substr($hex, 20);
     }
 }

@@ -16,8 +16,6 @@ final readonly class UpdateTaskUseCase
     ) {
     }
 
-    /**
-     */
     public function execute(TaskId $id, UpdateTaskInput $input): ?Task
     {
         $task = $this->tasks->findById($id);
@@ -38,8 +36,6 @@ final readonly class UpdateTaskUseCase
             $task->changeStatus($input->status);
         }
 
-        $this->tasks->save($task);
-
-        return $task;
+        return $this->tasks->update($task, $input);
     }
 }

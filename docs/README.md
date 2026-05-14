@@ -38,9 +38,9 @@ Infrastructure читает и пишет данные через SQLite.
 
 ## Основные папки
 
-`Domain/` - предметная модель: `Task`, `TaskId`, `TaskStatus`, `TaskPage`
+`Domain/` - предметная модель: `Task`, `TaskId`, `TaskStatus`
 
-`Application/` - сценарии приложения, DTO, контракты и idempotency-модель. Здесь лежит `TaskRepositoryInterface`, потому что use case'ам нужен контракт хранения, а не конкретная SQLite-реализация
+`Application/` - сценарии приложения, DTO, контракты и idempotency-модель. Здесь лежит `TaskRepositoryInterface`, потому что use case'ам нужен контракт хранения, а не конкретная SQLite-реализация. `TaskPage` тоже находится здесь, потому что это результат сценария списка, а не состояние задачи
 
 `Infrastructure/` - технический слой: config, HTTP kernel, router, middleware, controllers, request mappers, presenters, DI container, SQLite repositories, PDO, migrations
 

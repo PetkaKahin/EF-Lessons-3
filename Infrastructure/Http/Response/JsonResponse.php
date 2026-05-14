@@ -25,6 +25,6 @@ final class JsonResponse extends Response
             header($name . ': ' . $value);
         }
 
-        echo json_encode(['data' => $this->data], JSON_UNESCAPED_SLASHES);
+        echo json_encode($this->data, JSON_UNESCAPED_SLASHES);
     }
 }

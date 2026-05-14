@@ -6,7 +6,7 @@ namespace Application\UseCase\Task;
 
 use Application\Contracts\TaskRepositoryInterface;
 use Application\DTO\Task\ListTasksInput;
-use Domain\Task\DTO\TaskPage;
+use Application\DTO\Task\TaskPage;
 
 final readonly class ListTasksUseCase
 {

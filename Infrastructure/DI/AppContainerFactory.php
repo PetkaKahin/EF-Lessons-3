@@ -7,6 +7,7 @@ namespace Infrastructure\DI;
 use Application\Contracts\IdempotencyKeyRepositoryInterface;
 use Application\Contracts\TaskRepositoryInterface;
 use Application\Contracts\TransactionManagerInterface;
+use Application\Mapper\TaskSnapshotMapper;
 use Application\UseCase\EchoJsonUseCase;
 use Application\UseCase\GetHealthStatusUseCase;
 use Application\UseCase\GetImportantHeadersUseCase;
@@ -100,6 +101,7 @@ final class AppContainerFactory
         $container->singleton(JsonObjectBodyParser::class, static fn(Container $container): JsonObjectBodyParser => new JsonObjectBodyParser());
         $container->singleton(TaskStatusParser::class, static fn(Container $container): TaskStatusParser => new TaskStatusParser());
         $container->singleton(CreateTaskRequestHasher::class, static fn(Container $container): CreateTaskRequestHasher => new CreateTaskRequestHasher());
+        $container->singleton(TaskSnapshotMapper::class, static fn(Container $container): TaskSnapshotMapper => new TaskSnapshotMapper());
         $container->singleton(TaskIdPathMapper::class, static fn(Container $container): TaskIdPathMapper => new TaskIdPathMapper());
         $container->singleton(TaskPresenter::class, static fn(Container $container): TaskPresenter => new TaskPresenter());
         $container->singleton(
@@ -192,6 +194,7 @@ final class AppContainerFactory
             static fn(Container $container): CreateTaskIdempotentlyUseCase => new CreateTaskIdempotentlyUseCase(
                 $container->get(CreateTaskUseCase::class),
                 $container->get(RunIdempotentOperationUseCase::class),
+                $container->get(TaskSnapshotMapper::class),
             ),
         );
 

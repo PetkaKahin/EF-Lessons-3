@@ -19,7 +19,7 @@ final class GetImportantHeadersUseCase
             'Accept' => $accept,
         ];
 
-        if ($authorization !== null) {
+        if ($authorization !== null && $authorization !== '') {
             $headers['Authorization'] = $authorization;
         }
 

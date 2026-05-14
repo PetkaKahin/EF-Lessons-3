@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Infrastructure\Http\RequestMapper\Task;
 
 use Application\DTO\Task\ListTasksInput;
-use Domain\Task\TaskId;
 use Infrastructure\Kernel\Request;
 use InvalidArgumentException;
 
@@ -38,12 +37,16 @@ final readonly class ListTasksRequestMapper
         return (int) $value;
     }
 
-    private function cursor(?string $value): ?TaskId
+    private function cursor(?string $value): ?string
     {
         if ($value === null) {
             return null;
         }
 
-        return TaskId::fromData($value);
+        if (!ctype_digit($value) || (int) $value < 1) {
+            throw new InvalidArgumentException('Cursor must be a positive integer string.');
+        }
+
+        return $value;
     }
 }

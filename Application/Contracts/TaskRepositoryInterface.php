@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Application\Contracts;
 
-use Domain\Task\DTO\TaskPage;
+use Application\DTO\Task\TaskPage;
+use Application\DTO\Task\UpdateTaskInput;
 use Domain\Task\Task;
 use Domain\Task\TaskId;
 use Domain\Task\TaskStatus;
@@ -15,9 +16,9 @@ interface TaskRepositoryInterface
 
     public function findById(TaskId $id): ?Task;
 
-    public function findPage(?TaskStatus $status, int $limit, ?TaskId $cursor): TaskPage;
+    public function findPage(?TaskStatus $status, int $limit, ?string $cursor): TaskPage;
 
-    public function save(Task $task): void;
+    public function update(Task $task, UpdateTaskInput $input): ?Task;
 
     public function delete(TaskId $id): bool;
 }

@@ -12,7 +12,7 @@ final class TaskMapper
 {
     /**
      * @param array{
-     *     id: int|string,
+     *     id: string,
      *     title: string,
      *     description:
      *     string|null,
@@ -23,7 +23,7 @@ final class TaskMapper
     public function fromArray(array $row): Task
     {
         return Task::create(
-            id: TaskId::fromData($row['id']),
+            id: TaskId::fromData((string) $row['id']),
             title: $row['title'],
             description: $row['description'],
             status: TaskStatus::from($row['status']),
@@ -31,21 +31,4 @@ final class TaskMapper
         );
     }
 
-    /**
-     * @return array{
-     *     id: int,
-     *     title: string,
-     *     description: string|null,
-     *     status: string
-     * }
-     */
-    public function toArray(Task $task): array
-    {
-        return [
-            'id'          => $task->id->value,
-            'title'       => $task->title,
-            'description' => $task->description,
-            'status'      => $task->status->value,
-        ];
-    }
 }
