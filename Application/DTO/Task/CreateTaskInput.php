@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Application\DTO\Task;
 
 use Domain\Task\TaskStatus;
-use InvalidArgumentException;
 
 final readonly class CreateTaskInput
 {
@@ -14,8 +13,5 @@ final readonly class CreateTaskInput
         public ?string $description,
         public TaskStatus $status,
     ) {
-        if (trim($title) === '') {
-            throw new InvalidArgumentException('Title is required.');
-        }
     }
 }

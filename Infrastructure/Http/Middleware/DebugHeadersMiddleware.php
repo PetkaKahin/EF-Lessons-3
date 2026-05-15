@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Infrastructure\Http\Middleware;
 
+use Application\Contracts\ClockInterface;
+use Application\Contracts\TimeFormatterInterface;
+use Domain\Shared\Time\DateTimeValue;
 use Infrastructure\Config\Config;
 use Infrastructure\Http\Middleware\Contracts\MiddlewareInterface;
 use Infrastructure\Http\Middleware\Contracts\ResponseMiddlewareInterface;
@@ -18,8 +21,11 @@ final readonly class DebugHeadersMiddleware implements MiddlewareInterface, Resp
 
     private bool $debug;
 
-    public function __construct(Config $config)
-    {
+    public function __construct(
+        Config $config,
+        private readonly ClockInterface $clock,
+        private readonly TimeFormatterInterface $timeFormatter,
+    ) {
         $debug = $config->get(self::DEBUG_CONFIG_KEY);
 
         if (!is_bool($debug)) {
@@ -43,6 +49,18 @@ final readonly class DebugHeadersMiddleware implements MiddlewareInterface, Resp
             return $response;
         }
 
-        return new ResponseWithAppTimeHeader($response);
+        return new ResponseWithAppTimeHeader(
+            response: $response,
+            clock: $this->clock,
+            timeFormatter: $this->timeFormatter,
+            startedAt: $this->requestStartedAt(),
+        );
+    }
+
+    private function requestStartedAt(): DateTimeValue
+    {
+        $startedAt = $GLOBALS['requestStartedAt'] ?? null;
+
+        return $startedAt instanceof DateTimeValue ? $startedAt : $this->clock->now();
     }
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Infrastructure\Persistence\Task;
 
 use Application\Contracts\TaskRepositoryInterface;
+use Application\Contracts\TimeFormatterInterface;
 use Application\DTO\Task\TaskPage;
-use Application\DTO\Task\UpdateTaskInput;
 use Domain\Task\Task;
 use Domain\Task\TaskId;
 use Domain\Task\TaskStatus;
@@ -18,29 +18,28 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
     public function __construct(
         private PdoConnection $pdoConnection,
         private TaskMapper    $mapper,
+        private TimeFormatterInterface $timeFormatter,
     )
     {
     }
 
-    public function create(string $title, ?string $description, TaskStatus $status): Task
+    public function add(Task $task): void
     {
         $createTaskSql = <<<SQL
             INSERT INTO tasks (uuid, title, description, status, created_at)
-            VALUES (:uuid, :title, :description, :status, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-            RETURNING uuid AS id, title, description, status, created_at
+            VALUES (:uuid, :title, :description, :status, :created_at)
             SQL;
 
         $createTaskParameters = [
-            'uuid'        => $this->newUuid(),
-            'title'       => $title,
-            'description' => $description,
-            'status'      => $status->value,
+            'uuid'        => $task->id->value,
+            'title'       => $task->title,
+            'description' => $task->description,
+            'status'      => $task->status->value,
+            'created_at'  => $this->timeFormatter->formatForDatabase($task->createdAt),
         ];
 
         $statement = $this->pdo()->prepare($createTaskSql);
         $statement->execute($createTaskParameters);
-
-        return $this->mapper->fromArray($statement->fetch());
     }
 
     public function findById(TaskId $id): ?Task
@@ -100,48 +99,45 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
         $statement->bindValue(':limit', $requestedRowsLimit, PDO::PARAM_INT);
         $statement->execute();
 
-        $taskRows = $statement->fetchAll();
-        $hasNextPage = count($taskRows) > $limit;
-        $currentPageRows = array_slice($taskRows, 0, $limit);
-        $tasks = array_map(
-            fn(array $taskRow): Task => $this->mapper->fromArray($taskRow),
-            $currentPageRows,
-        );
-        $nextCursor = $hasNextPage && $currentPageRows !== []
-            ? (string) $currentPageRows[array_key_last($currentPageRows)]['cursor_id']
-            : null;
+        $tasks = [];
+        $nextCursor = null;
+        $lastCursor = null;
+        $fetchedRows = 0;
+
+        while (($taskRow = $statement->fetch()) !== false) {
+            $fetchedRows++;
+
+            if ($fetchedRows > $limit) {
+                $nextCursor = $lastCursor;
+                break;
+            }
+
+            $lastCursor = (string) $taskRow['cursor_id'];
+            $tasks[] = $this->mapper->fromArray($taskRow);
+        }
 
         return new TaskPage($tasks, $nextCursor);
     }
 
-    public function update(Task $task, UpdateTaskInput $input): ?Task
+    public function update(Task $task): bool
     {
-        $sets = [];
-        $parameters = [
-            'id' => $task->id->value,
-        ];
-
-        if ($input->hasTitle()) {
-            $sets[] = 'title = :title';
-            $parameters['title'] = $task->title;
-        }
-
-        if ($input->hasDescription()) {
-            $sets[] = 'description = :description';
-            $parameters['description'] = $task->description;
-        }
-
-        if ($input->hasStatus()) {
-            $sets[] = 'status = :status';
-            $parameters['status'] = $task->status->value;
-        }
-
-        $updateTaskSql = 'UPDATE tasks SET ' . implode(', ', $sets) . ' WHERE uuid = :id';
+        $updateTaskSql = <<<SQL
+            UPDATE tasks
+            SET title = :title,
+                description = :description,
+                status = :status
+            WHERE uuid = :id
+            SQL;
 
         $statement = $this->pdo()->prepare($updateTaskSql);
-        $statement->execute($parameters);
+        $statement->execute([
+            'id' => $task->id->value,
+            'title' => $task->title,
+            'description' => $task->description,
+            'status' => $task->status->value,
+        ]);
 
-        return $this->findById($task->id);
+        return $statement->rowCount() > 0;
     }
 
     /**
@@ -168,17 +164,4 @@ final readonly class SQLiteTaskRepository implements TaskRepositoryInterface
         return $this->pdoConnection->get();
     }
 
-    private function newUuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
-        $hex = bin2hex($bytes);
-
-        return substr($hex, 0, 8) . '-'
-            . substr($hex, 8, 4) . '-'
-            . substr($hex, 12, 4) . '-'
-            . substr($hex, 16, 4) . '-'
-            . substr($hex, 20);
-    }
 }

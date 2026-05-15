@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Application\Mapper;
 
+use Application\Contracts\TimeFormatterInterface;
 use Domain\Task\Task;
 use Domain\Task\TaskId;
 use Domain\Task\TaskStatus;
@@ -11,6 +12,11 @@ use RuntimeException;
 
 final class TaskSnapshotMapper
 {
+    public function __construct(
+        private readonly TimeFormatterInterface $timeFormatter,
+    ) {
+    }
+
     /**
      * @return array{
      *     id: string,
@@ -27,7 +33,7 @@ final class TaskSnapshotMapper
             'title' => $task->title,
             'description' => $task->description,
             'status' => $task->status->value,
-            'createdAt' => $task->createdAt,
+            'createdAt' => $this->timeFormatter->formatForApi($task->createdAt),
         ];
     }
 
@@ -41,7 +47,7 @@ final class TaskSnapshotMapper
             title: $this->string($data, 'title'),
             description: $this->nullableString($data, 'description'),
             status: TaskStatus::from($this->string($data, 'status')),
-            createdAt: $this->createdAt($data),
+            createdAt: $this->timeFormatter->parseFromApi($this->createdAt($data)),
         );
     }
 

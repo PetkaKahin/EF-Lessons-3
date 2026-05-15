@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Domain\Task;
 
+use Domain\Shared\Time\DateTimeValue;
 use InvalidArgumentException;
 
 final class Task
@@ -13,7 +14,7 @@ final class Task
         public private(set) string $title,
         public private(set) ?string $description,
         public private(set) TaskStatus $status,
-        public readonly string $createdAt,
+        public readonly DateTimeValue $createdAt,
     ) {
         self::assertTitle($title);
     }
@@ -21,16 +22,16 @@ final class Task
     public static function create(
         TaskId $id,
         string $title,
+        DateTimeValue $createdAt,
         ?string $description = null,
         TaskStatus $status = TaskStatus::New,
-        ?string $createdAt = null,
     ): self {
         return new self(
             id: $id,
             title: $title,
             description: $description,
             status: $status,
-            createdAt: $createdAt ?? date(DATE_ATOM),
+            createdAt: $createdAt,
         );
     }
 
@@ -54,7 +55,7 @@ final class Task
     private static function assertTitle(string $title): void
     {
         if (trim($title) === '') {
-            throw new InvalidArgumentException('Task title is required.');
+            throw new InvalidArgumentException('Title is required.');
         }
     }
 }

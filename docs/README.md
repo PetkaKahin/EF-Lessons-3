@@ -5,6 +5,7 @@
 1. [Жизненный цикл запроса](01 Жизненный цикл запроса.md) - путь HTTP-запроса от `public/index.php` до JSON-ответа
 2. [Слои и зависимости](02 Слои и зависимости.md) - как разделены `Domain`, `Application` и `Infrastructure`
 3. [Решения и паттерны](03 Решения и паттерны.md) - use case, repository, DTO, mapper, presenter, DI, middleware, idempotency, transactions
+4. [Вебхуки и ретраи](04 Вебхуки и ретраи.md) - как приложение отправляет webhook при переходе задачи в `done`
 
 ## Короткая модель
 
@@ -34,15 +35,17 @@ Infrastructure принимает внешний запрос и отдает в
 Application выполняет сценарий приложения.
 Domain хранит модель и правила предметной области.
 Infrastructure читает и пишет данные через SQLite.
+Infrastructure также отправляет внешние HTTP-запросы для webhook-интеграций.
+Время проходит через общий Clock/Formatter, чтобы БД, API, webhook и debug headers использовали один набор правил.
 ```
 
 ## Основные папки
 
-`Domain/` - предметная модель: `Task`, `TaskId`, `TaskStatus`
+`Domain/` - предметная модель и value object'ы: `Task`, `TaskId`, `TaskStatus`, `DateTimeValue`, `Duration`
 
-`Application/` - сценарии приложения, DTO, контракты и idempotency-модель. Здесь лежит `TaskRepositoryInterface`, потому что use case'ам нужен контракт хранения, а не конкретная SQLite-реализация. `TaskPage` тоже находится здесь, потому что это результат сценария списка, а не состояние задачи
+`Application/` - сценарии приложения, DTO, контракты, idempotency-модель и webhook-сценарии. Здесь лежит `TaskRepositoryInterface`, потому что use case'ам нужен контракт хранения, а не конкретная SQLite-реализация. `TaskPage` тоже находится здесь, потому что это результат сценария списка, а не состояние задачи
 
-`Infrastructure/` - технический слой: config, HTTP kernel, router, middleware, controllers, request mappers, presenters, DI container, SQLite repositories, PDO, migrations
+`Infrastructure/` - технический слой: config, HTTP kernel, router, middleware, controllers, request mappers, presenters, DI container, SQLite repositories, PDO, migrations, HTTP-клиент для webhook и console command для ретраев
 
 `public/` - входная точка веб-приложения
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Infrastructure\Http\Response;
 
+use JsonException;
+
 final class JsonResponse extends Response
 {
     /**
@@ -18,6 +20,16 @@ final class JsonResponse extends Response
 
     public function send(): void
     {
+        try {
+            $body = json_encode($this->data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        } catch (JsonException) {
+            $body = '{"error":"Unable to encode JSON response"}';
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+            echo $body;
+            return;
+        }
+
         http_response_code($this->statusCode);
         header('Content-Type: application/json; charset=utf-8');
 
@@ -25,6 +37,6 @@ final class JsonResponse extends Response
             header($name . ': ' . $value);
         }
 
-        echo json_encode($this->data, JSON_UNESCAPED_SLASHES);
+        echo $body;
     }
 }

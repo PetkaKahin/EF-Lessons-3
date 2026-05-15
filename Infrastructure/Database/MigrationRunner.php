@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Infrastructure\Database;
 
+use Application\Contracts\ClockInterface;
+use Application\Contracts\TimeFormatterInterface;
 use PDO;
 use RuntimeException;
 use Throwable;
@@ -16,6 +18,8 @@ final readonly class MigrationRunner
 {
     public function __construct(
         private string $migrationsPath,
+        private ClockInterface $clock,
+        private TimeFormatterInterface $timeFormatter,
     ) {
     }
 
@@ -109,9 +113,12 @@ final readonly class MigrationRunner
 
             $statement = $pdo->prepare(<<<SQL
                 INSERT INTO schema_migrations (name, executed_at)
-                VALUES (:name, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+                VALUES (:name, :executed_at)
                 SQL);
-            $statement->execute(['name' => $migrationName]);
+            $statement->execute([
+                'name' => $migrationName,
+                'executed_at' => $this->timeFormatter->formatForDatabase($this->clock->now()),
+            ]);
 
             $pdo->commit();
         } catch (Throwable $exception) {

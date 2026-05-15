@@ -7,6 +7,7 @@ namespace Infrastructure\Http\RequestMapper\Task;
 use Application\DTO\Task\UpdateTaskInput;
 use Domain\Task\TaskStatus;
 use Infrastructure\Http\RequestMapper\JsonObjectBodyParser;
+use Infrastructure\Http\RequestMapper\JsonObjectFieldsValidator;
 use Infrastructure\Kernel\Request;
 use InvalidArgumentException;
 use JsonException;
@@ -15,6 +16,7 @@ final readonly class UpdateTaskRequestMapper
 {
     public function __construct(
         private JsonObjectBodyParser $bodyParser,
+        private JsonObjectFieldsValidator $fieldsValidator,
         private TaskStatusParser $statusParser,
     ) {
     }
@@ -25,7 +27,7 @@ final readonly class UpdateTaskRequestMapper
     public function map(Request $request): UpdateTaskInput
     {
         $payload = $this->bodyParser->parse($request);
-        $this->assertAllowedFields($payload, ['title', 'description', 'status']);
+        $this->fieldsValidator->assertAllowedFields($payload, ['title', 'description', 'status']);
 
         return new UpdateTaskInput(
             titleProvided: array_key_exists('title', $payload),
@@ -85,16 +87,4 @@ final readonly class UpdateTaskRequestMapper
         return $this->statusParser->parse($payload['status']);
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @param string[] $allowedFields
-     */
-    private function assertAllowedFields(array $payload, array $allowedFields): void
-    {
-        $unknownFields = array_diff(array_keys($payload), $allowedFields);
-
-        if ($unknownFields !== []) {
-            throw new InvalidArgumentException('Unknown fields: ' . implode(', ', $unknownFields) . '.');
-        }
-    }
 }

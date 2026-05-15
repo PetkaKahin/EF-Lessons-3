@@ -21,10 +21,6 @@ final readonly class UpdateTaskInput
             throw new InvalidArgumentException('At least one field is required.');
         }
 
-        if ($titleProvided && (!is_string($title) || trim($title) === '')) {
-            throw new InvalidArgumentException('Title is required.');
-        }
-
         if ($statusProvided && $status === null) {
             throw new InvalidArgumentException('Status must be one of: new, in_progress, done.');
         }

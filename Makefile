@@ -1,4 +1,4 @@
-.PHONY: init up down migrate shell check-config
+.PHONY: init up down migrate retry-webhooks shell check-config
 
 init: check-config
 	docker compose build
@@ -12,7 +12,10 @@ down:
 	docker compose down
 
 migrate: check-config
-	docker compose run --rm php php -r "require 'vendor/autoload.php'; $$container = \Infrastructure\DI\AppContainerFactory::create(); $$runMigrations = $$container->get(\Infrastructure\Console\RunMigrationsCommand::class); $$appliedMigrations = $$runMigrations->execute(); echo $$appliedMigrations === [] ? \"No new migrations.\n\" : sprintf(\"Applied %d migration(s): %s\n\", count($$appliedMigrations), implode(', ', $$appliedMigrations));"
+	docker compose run --rm php php -r "require 'vendor/autoload.php'; $$container = \Infrastructure\DI\AppContainerFactory::create(); $$runMigrations = $$container->get(\Infrastructure\Console\RunMigrationsCommand::class); $$appliedMigrations = $$runMigrations->execute(); echo $$appliedMigrations === [] ? \"No new migrations.\n\" : \"Applied \" . count($$appliedMigrations) . \" migration(s): \" . implode(', ', $$appliedMigrations) . \"\n\";"
+
+retry-webhooks: check-config
+	docker compose exec php php -r "require 'vendor/autoload.php'; $$container = \Infrastructure\DI\AppContainerFactory::create(); $$retryWebhooks = $$container->get(\Infrastructure\Console\RunWebhookRetriesCommand::class); $$processed = $$retryWebhooks->execute(); echo \"Processed \" . $$processed . \" webhook delivery attempt(s).\n\";"
 
 shell:
 	docker compose exec php sh

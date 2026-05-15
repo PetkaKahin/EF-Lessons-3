@@ -6,6 +6,7 @@ use Infrastructure\Http\Controller\EchoController;
 use Infrastructure\Http\Controller\HeadersController;
 use Infrastructure\Http\Controller\HealthController;
 use Infrastructure\Http\Controller\TaskController;
+use Infrastructure\Http\Controller\WebhookReceiverController;
 use Infrastructure\Http\Middleware\BearerTokenMiddleware;
 use Infrastructure\Http\Middleware\CorsMiddleware;
 use Infrastructure\Http\Middleware\DebugHeadersMiddleware;
@@ -25,6 +26,7 @@ return static function (
     $router->get('/health', $container->get(HealthController::class));
     $router->post('/echo', $container->get(EchoController::class));
     $router->get('/headers', $container->get(HeadersController::class));
+    $router->post('/webhook-receiver', $container->get(WebhookReceiverController::class));
 
     $router->post('/tasks', [$taskController, 'create'], $auth);
     $router->get('/tasks', [$taskController, 'list']);

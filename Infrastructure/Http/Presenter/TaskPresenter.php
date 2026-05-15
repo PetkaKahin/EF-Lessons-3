@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace Infrastructure\Http\Presenter;
 
 use Application\DTO\Task\TaskPage;
+use Application\Mapper\TaskSnapshotMapper;
 use Domain\Task\Task;
 
-final class TaskPresenter
+final readonly class TaskPresenter
 {
+    public function __construct(
+        private TaskSnapshotMapper $taskSnapshotMapper,
+    ) {
+    }
+
     /**
      * @return array{
      *     id: string,
@@ -20,13 +26,7 @@ final class TaskPresenter
      */
     public function present(Task $task): array
     {
-        return [
-            'id'          => $task->id->value,
-            'title'       => $task->title,
-            'description' => $task->description,
-            'status'      => $task->status->value,
-            'createdAt'   => $task->createdAt,
-        ];
+        return $this->taskSnapshotMapper->toArray($task);
     }
 
     /**

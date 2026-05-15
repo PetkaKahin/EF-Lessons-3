@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Infrastructure\Persistence\Task;
 
+use Application\Contracts\TimeFormatterInterface;
 use Domain\Task\Task;
 use Domain\Task\TaskId;
 use Domain\Task\TaskStatus;
 
-final class TaskMapper
+final readonly class TaskMapper
 {
+    public function __construct(
+        private TimeFormatterInterface $timeFormatter,
+    ) {
+    }
+
     /**
      * @param array{
      *     id: string,
@@ -27,7 +33,7 @@ final class TaskMapper
             title: $row['title'],
             description: $row['description'],
             status: TaskStatus::from($row['status']),
-            createdAt: $row['created_at'],
+            createdAt: $this->timeFormatter->parseFromDatabase($row['created_at']),
         );
     }
 
